@@ -4,42 +4,47 @@
 #include <WiFi.h>
 #include <WebSockets.h>
 #include "WebsocketCon.h"
+#include "WSMsgRecievedHandler.h"
 #include "WiFi_Pass.h"
 
 
 #define RECALIBRATE_BTN 12
 
-unsigned long startMillis;  //some global variables available anywhere in the program
-unsigned long currentMillis;
+
 WebSocketsClient  webSocket;
 
 WebSocketCon::WebSocketCon() {
-  // constructor
+  // costructor
+
 }
 
 
 void WebSocketCon::setup_websocket() {
-    webSocket.begin(server_ip, server_port, "/");
+
+    webSocket.begin(serverIP, port, "/");
     // event handler
-    webSocket.onEvent(webSocketEvent);
+    // webSocket.onEvent(webSocketEvent);
+	 webSocket.onEvent([this](WStype_t type, uint8_t * payload, size_t length) {
+        this->webSocketEvent(type, payload, length);
+    });
     // use HTTP Basic Authorization this is optional remove if not needed
     // webSocket.setAuthorization("user", "Password");
+	webSocket.enableHeartbeat(15000, 3000, 2);
     webSocket.setReconnectInterval(1000);
 }
 
-void WebSocketCon::setup()
+void WebSocketCon::setup(int gloveNo)
 {
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("WiFi connected");
+  this->gloveNo = gloveNo;
 
   setup_websocket();
 
   
+}
+
+
+void WebSocketCon::setWSMsgRecievedHandler(WSMsgRecievedHandler* handler) {
+  wsMsgRecievedHandler = handler;
 }
 
 
@@ -62,19 +67,25 @@ void WebSocketCon::webSocketEvent(WStype_t type, uint8_t * payload, size_t lengt
 	switch(type) {
 		case WStype_DISCONNECTED:
 			Serial.printf("[WSc] Disconnected!\n");
+			if (isConnectedToServer) {
+				wsDisconnectedTime = millis(); // get the time at first disconnect
+			}
+			isConnectedToServer = false;
+
 			break;
 		case WStype_CONNECTED:
 			Serial.printf("[WSc] Connected to url: %s\n", payload);
+			isConnectedToServer = true;
+			Serial.printf("isConnectedToServer: %d\n", isConnectedToServer);
 			// send message to server when Connected
-			webSocket.sendTXT("Connected:RightGlove");
+			webSocket.sendTXT("con:" + String(gloveNo));
 			break;
 		case WStype_TEXT:
 			Serial.printf("[WSc] get text: %s\n", payload);
 
-      // when we get msgs?
+			// handleMsg((char*)payload, this);
+			wsMsgRecievedHandler->handleMessage((char*)payload, this);
 
-			// send message to server
-			// webSocket.sendTXT("message here");
 			break;
 		case WStype_BIN:
 			Serial.printf("[WSc] get binary length: %u\n", length);
@@ -99,35 +110,9 @@ void WebSocketCon::sendMsg(String msg) {
   webSocket.sendTXT(msg);
 }
 
+
 void WebSocketCon::loop()
 {
-      // Serial.println("checkpoint0 in ws loop");
   webSocket.loop();
-      // Serial.println("checkpoint1 in ws loop");
-
-  if (webSocket.isConnected()) {  //   
-
-    currentMillis = millis();
-    if (currentMillis - startMillis >=  5000) {
-      
-      // Serial.println("checkpoint2 in ws loop");
-      webSocket.sendTXT("play:drum2:10000");
-
-      startMillis = currentMillis; 
-
-    }
-  }
-
-
-      // Send message based on selected instrument
-      // if (currentMillis - startMillis >= auto_play_drum_period_for_testing)  //test whether the period has elapsed, no need if flex trigger is used
-      // {
-      
-      // // for recieving data from the server
-      // if (client.available() > 0) {
-        
-      //   // for now print
-      //   Serial.println(client.readStringUntil('\n'));
-      // }
-
 }
+

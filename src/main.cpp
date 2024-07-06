@@ -1,13 +1,44 @@
 #include <Battery.h>
 #include <Adafruit_SSD1306.h>
+
+#include <WebServer.h>
+#include <DNSServer.h>
+#include <Preferences.h>
+#include "WiFiManager.h"
+#include "AccessPoint.h"
+#include "WebsocketCon.h"
+#include "WSMsgRecievedHandler.h"
+
 #include "menu.h"
 #include "metronome.h"
 #include "Handler.h"
-#include "WebsocketCon.h"
 #include "BatteryL.h"
 #include "Piezo.h"
 
 #define GLOVE_NO 0
+
+
+const char *defaultAPSSID = "DRUM_GLOVE_0";
+const char *defaultAPPassword = "";
+
+
+String ssid;
+String password;
+String serverIP;
+int port;
+
+bool isConnectedToServer = false; // this will be set to true when the glove is connected to the server
+
+
+WebServer server(80);
+DNSServer dnsServer;
+Preferences preferences;
+
+WebSocketCon ws = WebSocketCon();
+WiFiManager wifiManager = WiFiManager();
+AccessPoint accessPoint = AccessPoint();
+
+unsigned long wsDisconnectedTime = 0;
 
 
 
@@ -15,10 +46,10 @@ String command;
 Menu menu = Menu();
 Metronome metronome = Metronome();
 Handler handler = Handler();
-WebSocketCon ws = WebSocketCon();
 BatteryL batteryL = BatteryL(GLOVE_NO,ACTIVATION_PIN);
 Piezo piezo = Piezo();
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
 
 Btn upbtn = Btn(4);
 Btn downbtn = Btn(13);
@@ -43,7 +74,7 @@ void setup() {
   Serial.begin(115200);
   
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-  ws.setup();
+  ws.setup(GLOVE_NO);
 
   ShowHomeScreen();
   delay(2000);
