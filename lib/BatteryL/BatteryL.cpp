@@ -20,7 +20,7 @@ BatteryL::BatteryL(int thisGloveBatteryNo ,int BatteryActivationPin){
     battery2Level = 0;
     analogReadResolution(ADC_RESOLUTION);
     battery.onDemand(activationPin, HIGH);
-    battery.begin(4200, 2, &asigmoidal);
+    battery.begin(4200, 2.4925, &asigmoidal);
 }
 
 void BatteryL::BatteryInit(Adafruit_SSD1306 *d, WebSocketCon *ws) {
@@ -30,7 +30,7 @@ void BatteryL::BatteryInit(Adafruit_SSD1306 *d, WebSocketCon *ws) {
 }
 
 void BatteryL::UpdateDisplay() {
-  Serial.println("Item 2 Selected");
+  Serial.println("battery level window Selected");
     display.clearDisplay();
 
     // Draw battery 1
@@ -47,9 +47,6 @@ void BatteryL::UpdateDisplay() {
     
     display.display();
     
-
-  
-  display.clearDisplay();
 }
 
 int BatteryL::getBattery1Level(){

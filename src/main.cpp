@@ -20,10 +20,6 @@ BatteryL batteryL = BatteryL(GLOVE_NO,ACTIVATION_PIN);
 Piezo piezo = Piezo();
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-  void item1Action();
-  void item2Action();
-  void item3Action();
-  void item4Action();
  void serialDebuger();
  void nullFunction();
  void ShowHomeScreen();
@@ -77,46 +73,6 @@ void nullFunction(){
   Serial.println("function invoked");
 }
  
-void item1Action() {
-  Serial.println("Item 1 Selected");
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("Item 1 Action");
-  display.display();
-  delay(2000); // Pause to simulate task
-  display.clearDisplay();
-}
-
-void item2Action() {
-  Serial.println("Item 2 Selected");
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("Item 2 Action");
-  display.display();
-  delay(2000); // Pause to simulate task
-  display.clearDisplay();
-}
-
-void item3Action() {
-  Serial.println("Item 3 Selected");
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("Item 3 Action");
-  display.display();
-  delay(2000); // Pause to simulate task
-  display.clearDisplay();
-}
-
-void item4Action() {
-  Serial.println("Item 4 Selected");
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("Item 4 Action");
-  display.display();
-  delay(2000); // Pause to simulate task
-  display.clearDisplay();
-}
-
 
 void showBatteryLevel(){
   delay(1000);
