@@ -20,6 +20,11 @@ BatteryL batteryL = BatteryL(GLOVE_NO,ACTIVATION_PIN);
 Piezo piezo = Piezo();
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+Btn upbtn = Btn(4);
+Btn downbtn = Btn(13);
+Btn selectbtn = Btn(12);
+Btn backbtn = Btn(27);
+
  void serialDebuger();
  void nullFunction();
  void ShowHomeScreen();
@@ -28,6 +33,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
  void updateWindow();
  void changeBtnFunctionContex();
  void printWindow();
+ void onSelect();
+ void onBack();
+ void onUp();
+ void onDown();
 
 void setup() {
 
@@ -49,6 +58,10 @@ void setup() {
   menu.MenuSetItem("Exit",&ShowHomeScreen);
 
   handler.setFucnctions(&nullFunction,&nullFunction,&nullFunction,&nullFunction);
+  upbtn.setup(onUp);
+  downbtn.setup(onDown);
+  selectbtn.setup(onSelect);
+  backbtn.setup(onBack);
 
   metronome.MetronomeInit(&display);
 
@@ -62,8 +75,12 @@ void loop(){
     // Serial.println("battery loop done");
     piezo.loop();
     // Serial.println("piezo loop done");
-    ws.loop();
+    // ws.loop();
     // Serial.println("Ws loop done");
+    upbtn.check();
+    downbtn.check();
+    selectbtn.check();
+    backbtn.check();
 }
 
 
@@ -103,26 +120,18 @@ void serialDebuger(){
   }
   else if (command == "u")
   {
-    // menu.MenuUp();
-    // menu.UpdateMenu();
-    handler.Up();
+    onUp();
   }
     else if (command == "d")
   {
-    // menu.MenuDown();
-    // menu.UpdateMenu();
-    handler.Down();
+    onDown();
   }
       else if (command == "s")
   {
-    // menu.MenuSelect();
-    // menu.UpdateMenu();
-    handler.Select();
-    goToWindow();    
+    onSelect();  
   }
   else if(command == "b"){
-    handler.Back();
-    backToWindow();
+    onBack();
   }
   else
   {
@@ -228,5 +237,32 @@ void changeBtnFunctionContex(){
     default:
       break;
     }
+}
+
+void onSelect(){
+  handler.Select();
+  goToWindow();    
+  Serial.println("select");
+  updateWindow();
+  changeBtnFunctionContex();
+}
+void onBack(){
+  handler.Back();
+  backToWindow();
+  Serial.println("back");
+  updateWindow();
+  changeBtnFunctionContex();
+}
+void onUp(){
+  handler.Up();
+  Serial.println("up");
+  updateWindow();
+  // changeBtnFunctionContex();
+}
+void onDown(){
+  handler.Down();
+  Serial.println("down");
+  updateWindow();
+  // changeBtnFunctionContex();
 }
 

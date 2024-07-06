@@ -10,7 +10,7 @@ int battery2Level;
 int thisGlove;
 int activationPin;
 unsigned long lastBatteryCheck = 0;
-Battery battery = Battery(3300, 4200, SENSE_PIN, ADC_RESOLUTION);
+Battery battery = Battery(5000,8400, SENSE_PIN, ADC_RESOLUTION);
 
 
 BatteryL::BatteryL(int thisGloveBatteryNo ,int BatteryActivationPin){
@@ -20,7 +20,7 @@ BatteryL::BatteryL(int thisGloveBatteryNo ,int BatteryActivationPin){
     battery2Level = 0;
     analogReadResolution(ADC_RESOLUTION);
     battery.onDemand(activationPin, HIGH);
-    battery.begin(4200, 2.4925, &asigmoidal);
+    battery.begin(3300, 2.4925, &asigmoidal);
 }
 
 void BatteryL::BatteryInit(Adafruit_SSD1306 *d, WebSocketCon *ws) {

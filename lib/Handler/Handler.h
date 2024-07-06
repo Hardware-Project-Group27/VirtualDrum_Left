@@ -29,4 +29,29 @@ class Handler{
         static short currentWindow;
 };
 
+class Btn{
+
+    private:
+        void shortPressAction();
+        void mediumPressAction();
+        void longPressAction();
+        short pin;
+        void (*trigerFunction)(void);
+        bool buttonState = false;          // Current state of the button
+        bool lastButtonState = false;      // Previous state of the button
+        unsigned long buttonPressTime = 0; // Time when the button was pressed
+        unsigned long buttonReleaseTime = 0; // Time when the button was released
+        unsigned long buttonDuration = 0;  // Duration for which the button was pressed
+        const unsigned long debounceDelay = 50; // Debounce time in milliseconds
+        bool isDone=false;
+        unsigned long mFuncLastCall=0;
+        unsigned long LFuncLastCall=0;
+
+    public:
+        Btn(short pin);
+        void setup(void (*trigerFunction)(void));
+        void check();
+
+};
+
 #endif

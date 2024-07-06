@@ -51,18 +51,6 @@ void Menu::MenuInit(Adafruit_SSD1306 *d) {
   display.display();
   delay(2000);
 
-
-  // // Initialize buttons
-  // // THESE SHOULD BE CONNECTED IN PULL DOWN
-  // // press - high
-  // // not pressed - low
-  // pinMode(buttonUp, INPUT);
-  // pinMode(buttonDown, INPUT);
-  // pinMode(buttonSelect, INPUT);
-  // MenuSetItem("Metronome",&item1Action);
-  // MenuSetItem("Battery",&item2Action);
-  // MenuSetItem("Reset",&item3Action);
-  // MenuSetItem("Exit",&item4Action);
 }
 
 
@@ -75,36 +63,6 @@ void Menu::MenuSetItem(char* displayName , void (*callback)(void) , int index){
   mi[index].menuItem = displayName;
   mi[index].callback = callback;
 }
-
-// void loop() {
-  // Handle button presses with debouncing
-  // static unsigned long lastButtonPressTime = 0;
-  // unsigned long currentTime = millis();
-  // const unsigned long debounceDelay = 200; // 200 milliseconds debounce delay
-
-  // if ((currentTime - lastButtonPressTime) > debounceDelay) {
-  //   if (digitalRead(buttonUp) == HIGH) {
-  //     Up();
-  //     delay(200); // Debounce delay
-  //     lastButtonPressTime = currentTime;
-  //   }
-
-  //   if (digitalRead(buttonDown) == HIGH) {
-  //     Down();
-  //     delay(200); // Debounce delay
-  //     lastButtonPressTime = currentTime;
-  //   }
-
-  //   if (digitalRead(buttonSelect) == HIGH) {
-  //     // Add action for the selected item
-  //     Select()
-  //     lastButtonPressTime = currentTime;
-  //   }
-  // }
-
-  // Display menu
-
-// }
 
 void Menu::UpdateMenu(){
   display.clearDisplay();

@@ -1,4 +1,5 @@
 #include "Handler.h"
+#include <Arduino.h>
 
 short Handler::currentWindow = WINDOW_HOME;
 
@@ -47,3 +48,75 @@ void Handler::set_BackFunc(HandleOp bf){
 }
 
 
+// Btn class
+Btn::Btn(short p){
+    pin = p;
+    pinMode(pin, INPUT_PULLUP);
+}
+
+void Btn::setup(void (*tf)(void)){
+    trigerFunction = *tf;
+}
+
+void Btn::check() {
+  // Read the current state of the button:
+  buttonState = digitalRead(pin) == LOW; // Active LOW
+
+  // Check if the button state has changed:
+  if (buttonState != lastButtonState) {
+    // Reset the debounce timer
+    if (buttonState) {
+      buttonPressTime = millis(); // Button pressed, record press time
+    } else {
+      isDone =false;
+      buttonReleaseTime = millis(); // Button released, record release time
+      buttonDuration = buttonReleaseTime - buttonPressTime; // Calculate press duration
+
+      // Print the button press duration after releasing the button
+      Serial.print("Button press duration: ");
+      Serial.print(buttonDuration);
+      Serial.println(" ms");
+    }
+  }  
+  // Serial.println( millis() -buttonPressTime);
+  // Check if the button is pressed and print the time since it was pressed
+  if (buttonState) {
+    // Serial.println(millis() - buttonPressTime);
+    if(millis() - buttonPressTime<800){
+      shortPressAction();
+    }
+    else if(millis() - buttonPressTime<6000){
+      mediumPressAction();
+    }
+    else{
+      longPressAction();
+    }
+  }
+
+  // Update the last button state:
+  lastButtonState = buttonState;
+}
+
+void Btn::shortPressAction() {
+  if(!isDone){
+    // Serial.println("Short press action");
+    trigerFunction();
+    isDone = !isDone;
+  }
+}
+
+void Btn::mediumPressAction() {
+  if(millis()-mFuncLastCall>1000){
+    // Serial.println("Medium press action");
+    trigerFunction();
+    mFuncLastCall = millis();
+  }
+}
+
+void Btn::longPressAction() {
+  if(millis()-LFuncLastCall>100){
+    // Serial.println("Long press action");
+    trigerFunction();
+    LFuncLastCall = millis();
+  }
+}
