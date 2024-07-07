@@ -15,11 +15,17 @@ class Piezo{
         int LastReadValue[SENSOR_COUNT];
         int triggerLevel;
         void SendSerialTrigerSignal(int sensorId, int reading);
+        Adafruit_SSD1306 display;
+        WebSocketCon wsCon; 
+    
 
     public:
         Piezo();
         int ReadPiezoInput(short c);
         void loop();
+        void UpdateDisplay();
+        static void Tougle();
+        void PiezoInit(Adafruit_SSD1306 *d, WebSocketCon *ws);
 
 
 };

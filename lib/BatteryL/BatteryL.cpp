@@ -26,12 +26,14 @@ BatteryL::BatteryL(int thisGloveBatteryNo ,int BatteryActivationPin){
 void BatteryL::BatteryInit(Adafruit_SSD1306 *d, WebSocketCon *ws) {
     display = *d;
     wsCon = *ws;
-    
 }
 
 void BatteryL::UpdateDisplay() {
   Serial.println("battery level window Selected");
     display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+
 
     // Draw battery 1
     display.setCursor(0, 0);
@@ -44,7 +46,13 @@ void BatteryL::UpdateDisplay() {
     display.println("B2:");
     display.drawRect(40, 40, 30, 16, SSD1306_WHITE); // Draw battery outline
     display.fillRect(42, 42, 26 * battery2Level / 100, 12, SSD1306_WHITE); // Draw battery level
-    
+
+    display.setCursor(80,0);
+    display.println(String(battery1Level)+"%");
+
+    display.setCursor(80,40);
+    display.println(String(battery2Level)+"%");
+
     display.display();
     
 }
@@ -68,6 +76,7 @@ void BatteryL::measureBatteryLevel(){
       int batLevel = battery.level(batVoltage);
       if(thisGlove == 0){
         battery1Level = batLevel;
+        wsCon.sendMsg("batReq:");
       }
       else if(thisGlove == 1){
         battery2Level = batLevel;

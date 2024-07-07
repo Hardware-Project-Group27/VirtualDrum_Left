@@ -5,6 +5,7 @@
 #define WINDOW_MENU 1
 #define WINDOW_METRONOME 2
 #define WINDOW_BATTERY 3
+#define WINDOW_PIEZO 4
 
 class Handler{
 

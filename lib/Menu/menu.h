@@ -23,6 +23,10 @@ static void MenuBack();
 void UpdateMenu();
 int getSelectedIndex();
 void MenuSetItem(char* displayName , void (*callback)(void) , int index =-1);
+void Alert(String message,String message2);
+void ClearAlert();
+unsigned long getAlertShownTime();
+bool isAlertShown = false;
 
 };
 
