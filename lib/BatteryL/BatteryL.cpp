@@ -64,23 +64,24 @@ void BatteryL::setBattery2Level(int level){
 
 void BatteryL::measureBatteryLevel(){
     if(millis() - lastBatteryCheck > CHECK_INTERVAL){
+      int batVoltage = battery.voltage(STABALIZE_DELAY);
+      int batLevel = battery.level(batVoltage);
       if(thisGlove == 0){
-        battery1Level = battery.level(battery.voltage(STABALIZE_DELAY));
-        Serial.print("Battery Level ");
-        Serial.println(battery1Level);
+        battery1Level = batLevel;
       }
       else if(thisGlove == 1){
-        battery2Level = battery.level(battery.voltage(STABALIZE_DELAY));
-        Serial.print("Battery Level ");
-        Serial.println(battery1Level);
+        battery2Level = batLevel;
       }
       lastBatteryCheck = millis();
 
 
-      String s = "bat:" + String(thisGlove) + ":" + String(battery.level());
+      String s = "bat:" + String(thisGlove) + ":" + String(batLevel);
       wsCon.sendMsg(s);
+
+      Serial.print("Battery Level ");
+      Serial.println(batLevel);
       Serial.print("Battery Voltage ");
-      Serial.println(battery.voltage());
+      Serial.println(batVoltage);
     }
 }
 
