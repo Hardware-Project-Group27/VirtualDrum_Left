@@ -1,9 +1,7 @@
 #ifndef METRONOME
 #define METRONOME
 
-#define LED_PIN 2 // Pin for the LED
-#define BUTTON_INC_PIN 19 // Pin for the button to increase tempo
-#define BUTTON_DEC_PIN 18 // Pin for the button to decrease tempo
+#define LED_PIN BUILTIN_LED // Pin for the LED
 #define MIN_BPM 35       // Minimum BPM
 #define MAX_BPM 250      // Maximum BPM
 

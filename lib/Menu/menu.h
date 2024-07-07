@@ -8,11 +8,6 @@
 #define OLED_RESET    -1
 #define SCREEN_ADDRESS 0x3C
 
-// Define button pins
-#define buttonUp 18;
-#define buttonDown 5;
-#define buttonSelect 4;
-
 class Menu{
   private:
   Adafruit_SSD1306 display;
