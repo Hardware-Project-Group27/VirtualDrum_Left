@@ -17,8 +17,9 @@
 
 #define GLOVE_NO 0
 
+unsigned long alertTime = 9000000; // show setup alert for 15 minutes
 
-const char *defaultAPSSID = "DRUM_GLOVE_0";
+const char *defaultAPSSID = "DRUM_GLOVE";
 const char *defaultAPPassword = "";
 
 
@@ -37,10 +38,7 @@ Preferences preferences;
 WebSocketCon ws = WebSocketCon();
 WiFiManager wifiManager = WiFiManager();
 AccessPoint accessPoint = AccessPoint();
-
-unsigned long wsDisconnectedTime = 0;
-
-
+WSMsgRecievedHandler wsMsgRecievedHandler = WSMsgRecievedHandler(GLOVE_NO);
 
 String command;
 Menu menu = Menu();
@@ -68,50 +66,141 @@ Btn backbtn = Btn(27);
  void onBack();
  void onUp();
  void onDown();
+ bool canAllowBtnAction();
+
+
+unsigned long wsDisconnectedTime = 0;
+unsigned long timeAfterSetup = 0;
 
 void setup() {
 
   Serial.begin(115200);
-  
-  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-  ws.setup(GLOVE_NO);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC,SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+
+  ws.setWSMsgRecievedHandler(&wsMsgRecievedHandler);
+  batteryL.BatteryInit(&display, &ws);
+  wsMsgRecievedHandler.setBatteryL(&batteryL);
 
   ShowHomeScreen();
-  delay(2000);
-
-
-  batteryL.BatteryInit(&display, &ws);
-
   menu.MenuInit(&display);
+  delay(2000);
+  wifiManager.loadCredentials();
+  if (GLOVE_NO == 0) {
+    defaultAPSSID = "DRUM_GLOVE_LEFT";
+  } else {
+    defaultAPSSID = "DRUM_GLOVE_RIGHT";
+  }
+
+  if (ssid == "" || password == "") {
+    accessPoint.start();
+    menu.Alert("Config","Connect to:\n"+String(defaultAPSSID)+" Wifi network & Visit\nhttp://esp.local");
+  } else {
+    if (wifiManager.connectToWiFi()) {
+      Serial.println("\nConnected to WiFi");
+      Serial.println("IP Address: " + WiFi.localIP().toString());
+      menu.Alert("Connected","IP Address:\n" + WiFi.localIP().toString()+"\nWaiting for server");
+    
+      ws.setup(GLOVE_NO);  // the global flag will be set to true by this if connect
+      // we dont start the server connection here, the onevent needs to detect the connection
+      // so we check in the main loop
+      
+    } else {
+      Serial.println("\nFailed to connect to WiFi. Starting AP mode.");
+      menu.Alert("Failed","Connection failed!,\nConnect to "+String(defaultAPSSID)+" & Visit\nhttp://esp.local");
+      accessPoint.start();
+    }
+  }
+
+
+
+
+
   menu.MenuSetItem("Metronome",&metronome.Open);
   menu.MenuSetItem("Battery",&nullFunction);
+  menu.MenuSetItem("Piezo",&nullFunction);
   menu.MenuSetItem("Reset",&esp_restart);
-  menu.MenuSetItem("Exit",&ShowHomeScreen);
-
   handler.setFucnctions(&nullFunction,&nullFunction,&nullFunction,&nullFunction);
+  
+  
+  piezo.PiezoInit(&display,&ws);
+
   upbtn.setup(onUp);
   downbtn.setup(onDown);
   selectbtn.setup(onSelect);
   backbtn.setup(onBack);
-
   metronome.MetronomeInit(&display);
 
+
+  wsDisconnectedTime = millis(); 
+  timeAfterSetup = millis();
+
+  if(!accessPoint.isStarted()){
+    alertTime = 1500;
+  }
 }
+
 
 void loop(){
     serialDebuger();
+
+    if (!accessPoint.isStarted()) {
+      piezo.loop();
+      ws.loop();
+    }
+
+      // if 4 seconds passed after setup
+    if ((millis() - timeAfterSetup > 4000) && !isConnectedToServer && !accessPoint.isStarted()) {
+      // if 4 seconds after last disconnection
+      if (millis() - wsDisconnectedTime > 4000) {
+        Serial.println("Failed to connect to server. Starting AP mode.");
+        alertTime = 9000000;
+        menu.Alert("Failed","Server Not Found!,\nConnect to "+String(defaultAPSSID)+" & Visit\nhttp://esp.local");
+        accessPoint.start();
+      }
+    }
+
     metronome.UpdateMetronome();
-    // batteryL.setBattery1Level(batt.level());
     batteryL.measureBatteryLevel();
-    // Serial.println("battery loop done");
-    piezo.loop();
-    // Serial.println("piezo loop done");
-    // ws.loop();
-    // Serial.println("Ws loop done");
+
     upbtn.check();
     downbtn.check();
     selectbtn.check();
     backbtn.check();
+
+    // clear Alert after ALERT_TIME
+    if(menu.isAlertShown && millis() - menu.getAlertShownTime() > alertTime){
+      menu.ClearAlert();
+      updateWindow();
+    }
+
+
+    // for wifi disconnection
+  if (!wifiManager.isConnectedToWifi() && !accessPoint.isStarted()) {
+      unsigned long startTime = millis();
+      while (!wifiManager.connectToWiFi() && millis() - startTime < 5000) {
+        delay(500);
+        Serial.print(".");
+      }
+
+      if (wifiManager.isConnectedToWifi()) {
+        Serial.println("\nConnected to WiFi");
+        Serial.println("IP Address: " + WiFi.localIP().toString());
+      } else {
+        Serial.println("\nFailed to connect to WiFi. Starting AP mode.");
+        accessPoint.start();
+      }
+  }
+
+  if (accessPoint.isStarted()) {
+    dnsServer.processNextRequest();
+    // Serial.println("AP mode");
+    server.handleClient();
+  }
+
 }
 
 
@@ -188,6 +277,9 @@ void backToWindow(){
     case WINDOW_METRONOME:
       handler.currentWindow = WINDOW_MENU;
       break;
+    case WINDOW_PIEZO:
+      handler.currentWindow = WINDOW_MENU;
+      break;
   }
   printWindow();
 }
@@ -204,8 +296,9 @@ void goToWindow(){
         handler.currentWindow = WINDOW_BATTERY;
         break;
 
-      case 3:
-        handler.currentWindow = WINDOW_HOME;
+      case 2:
+        handler.currentWindow = WINDOW_PIEZO;
+        break;
       
       default:
         handler.currentWindow = WINDOW_HOME;
@@ -239,6 +332,10 @@ void updateWindow(){
     else if(handler.currentWindow == WINDOW_BATTERY){
       batteryL.UpdateDisplay();
     }
+    else if(handler.currentWindow == WINDOW_PIEZO){
+      piezo.UpdateDisplay();
+      Serial.println("piezo window Selected");
+    }
     else{
       handler.currentWindow = WINDOW_HOME;
       ShowHomeScreen();
@@ -265,35 +362,61 @@ void changeBtnFunctionContex(){
       handler.setFucnctions(&metronome.MetronomeUp,&metronome.MetronomeDown,&metronome.Tougle,&nullFunction);
       break;
 
+    case WINDOW_PIEZO:
+      handler.setFucnctions(&piezo.SensitivityUP,&piezo.SensitivityDown,&piezo.Tougle,&nullFunction);
+      break;
+
     default:
       break;
     }
 }
 
+bool canAllowBtnAction(){
+    if(alertTime<5000 && menu.isAlertShown){
+    return false;
+  }
+  else if(menu.isAlertShown){
+    menu.ClearAlert();
+    alertTime = 1500;
+    return true;
+  }
+  else{
+    return true;
+  }
+}
+
 void onSelect(){
-  handler.Select();
-  goToWindow();    
-  Serial.println("select");
-  updateWindow();
-  changeBtnFunctionContex();
+  if(canAllowBtnAction()){
+    handler.Select();
+    goToWindow();    
+    Serial.println("select");
+    updateWindow();
+    changeBtnFunctionContex();
+  }
 }
 void onBack(){
+  if(canAllowBtnAction()){
   handler.Back();
   backToWindow();
   Serial.println("back");
   updateWindow();
   changeBtnFunctionContex();
+  }
 }
 void onUp(){
+  if(canAllowBtnAction()){
   handler.Up();
   Serial.println("up");
   updateWindow();
   // changeBtnFunctionContex();
+  }
 }
 void onDown(){
+  if(canAllowBtnAction()){
   handler.Down();
   Serial.println("down");
   updateWindow();
   // changeBtnFunctionContex();
+  }
 }
 

@@ -8,11 +8,6 @@
 #define OLED_RESET    -1
 #define SCREEN_ADDRESS 0x3C
 
-// Define button pins
-#define buttonUp 18;
-#define buttonDown 5;
-#define buttonSelect 4;
-
 class Menu{
   private:
   Adafruit_SSD1306 display;
@@ -27,7 +22,11 @@ static void MenuSelect();
 static void MenuBack();
 void UpdateMenu();
 int getSelectedIndex();
-void MenuSetItem(char* displayName , void (*callback)(void) , int index =-1);
+void MenuSetItem(String displayName , void (*callback)(void) , int index =-1);
+void Alert(String message,String message2);
+void ClearAlert();
+unsigned long getAlertShownTime();
+bool isAlertShown = false;
 
 };
 

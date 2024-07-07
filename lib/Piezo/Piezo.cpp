@@ -1,15 +1,16 @@
-#include "Piezo.h"
 #include <Arduino.h>
+#include <Adafruit_SSD1306.h>
+#include "WebsocketCon.h"
+#include "Piezo.h"
 
 long LastTriggeredTime[SENSOR_COUNT] = {0,0,0,0} ;
 int LastReadValue[SENSOR_COUNT] = {0,0,0,0} ;
 int triggerLevel = 0;
+bool isEnable = false;
+unsigned int sensitivity = 10;
 
+// #define THRESHOLD 10 // analog readings of below and equal to THRESHOLD will not be send to the server
 
-#define SENSOR_COUNT 4
-
-#define THRESHOLD 10 // analog readings of below and equal to THRESHOLD will not be send to the server
-#define CHECK_INTERVAL 40
 
 Piezo::Piezo(){
     pinMode(PIEZO1_PIN, INPUT);
@@ -18,33 +19,81 @@ Piezo::Piezo(){
     pinMode(PIEZO4_PIN, INPUT);
 }
 
+void Piezo::PiezoInit(Adafruit_SSD1306 *d, WebSocketCon *ws) {
+    display = *d;
+    wsCon = *ws;
+
+}
+
 void Piezo::loop() {
-for(int sensorId=0;sensorId<SENSOR_COUNT;sensorId++){
-  int reading = ReadPiezoInput(sensorId);
-  if((millis() - LastTriggeredTime[sensorId] < CHECK_INTERVAL) || (reading >= LastReadValue[sensorId])){
-    LastReadValue[sensorId]=reading;
-    continue;
-    //triggerLevel = LastReadValue;
+  if(isEnable){
+    for(int sensorId=0;sensorId<SENSOR_COUNT;sensorId++){
+      int reading = ReadPiezoInput(sensorId);
+      if((millis() - LastTriggeredTime[sensorId] < CHECK_INTERVAL) || (reading >= LastReadValue[sensorId])){
+        LastReadValue[sensorId]=reading;
+        continue;
+        //triggerLevel = LastReadValue;
+      }
+      else if(reading < LastReadValue[sensorId]){
+        triggerLevel = LastReadValue[sensorId];
+      }
+      else{
+        triggerLevel = reading;
+        LastTriggeredTime[sensorId] = millis();
+      }
+      if(triggerLevel>sensitivity){
+        SendSerialTrigerSignal(sensorId,triggerLevel);
+        LastReadValue[sensorId] = 0;
+        LastTriggeredTime[sensorId] = millis();
+        triggerLevel=0;
+      }
+    }
   }
-  else if(reading < LastReadValue[sensorId]){
-    triggerLevel = LastReadValue[sensorId];
+}
+
+void Piezo::UpdateDisplay(){
+  Serial.println("Piezo updateDisplay");
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(22,10);
+  display.println("Piezo");
+  display.setTextSize(1);
+  display.setCursor(20,35);
+  if(isEnable){
+    display.println("State: Enabled");
   }
   else{
-    triggerLevel = reading;
-    LastTriggeredTime[sensorId] = millis();
+    display.println("State: Disabled");
   }
-  if(triggerLevel>THRESHOLD){
-    SendSerialTrigerSignal(sensorId,triggerLevel);
-    LastReadValue[sensorId] = 0;
-    LastTriggeredTime[sensorId] = millis();
-    triggerLevel=0;
-  }
-}
+  display.setCursor(20,45);
+  display.println("Sensitivity: "+String(sensitivity));
+  display.display();
 }
 
+bool Piezo::getIsEnabled(){
+  return isEnable;
+}
+
+void Piezo::SensitivityUP(){
+  if(sensitivity<MAX_SENSITIVITY){
+    sensitivity+=1;
+  }
+}
+
+void Piezo::SensitivityDown(){
+  if(sensitivity>0){
+    sensitivity-=1;
+  }
+}
+
+void Piezo::Tougle(){
+  isEnable = !isEnable;
+}
 
 void Piezo::SendSerialTrigerSignal(int sensorId, int reading){
-  Serial.print("drum");
+  wsCon.sendMsg("play:drum" + String(sensorId+1) + ":" + String(reading));
+  Serial.print("play:drum");
   Serial.print(sensorId+1);
   Serial.print(":");
   Serial.println(reading);

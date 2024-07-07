@@ -3,8 +3,9 @@
 
 #define SENSE_PIN 32
 #define ADC_RESOLUTION 12
-#define ACTIVATION_PIN 12
-#define CHECK_INTERVAL 2000
+#define ACTIVATION_PIN 26
+#define CHECK_INTERVAL 10000
+#define STABALIZE_DELAY 2
 
 class BatteryL{
 

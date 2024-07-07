@@ -8,8 +8,6 @@
 #include "WiFi_Pass.h"
 
 
-#define RECALIBRATE_BTN 12
-
 
 WebSocketsClient  webSocket;
 

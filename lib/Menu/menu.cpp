@@ -5,7 +5,7 @@
 
 
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
-
+unsigned long AlertShownAt = 0;
 
 
 
@@ -13,7 +13,7 @@ unsigned long debounceDelay = 50;    // the debounce time; increase if the outpu
 const int menuLength = 4;
 
 typedef struct MenuItem{
-  char* menuItem;
+  String menuItem;
   void (*callback)(void);
 } MenuItem;
 
@@ -30,15 +30,8 @@ Menu::Menu(){
 
 void Menu::MenuInit(Adafruit_SSD1306 *d) {
   display = *d;
-  // start the serial conn
-  // Serial.begin(9600);
 
   // Initialize display
-  if(!display.begin(SSD1306_SWITCHCAPVCC,SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
-  }
-
 
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
   display.clearDisplay();
@@ -53,9 +46,33 @@ void Menu::MenuInit(Adafruit_SSD1306 *d) {
 
 }
 
+void Menu::Alert(String message,String message2){
+  isAlertShown = true;
+  Serial.println("Alert");
+  AlertShownAt = millis();
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(5,10);
+  display.println(message);// Print text
+  display.setTextSize(1);
+  display.setCursor(0,30);
+  display.println(message2);
+  display.display();
+}
+
+void Menu::ClearAlert(){
+  isAlertShown = false;
+  display.clearDisplay();
+  display.display();
+}
+
+unsigned long Menu::getAlertShownTime(){
+  return AlertShownAt;
+}
 
 
-void Menu::MenuSetItem(char* displayName , void (*callback)(void) , int index){
+void Menu::MenuSetItem(String displayName , void (*callback)(void) , int index){
   if(index==-1){
     index = mlen;
     mlen++;
@@ -66,6 +83,7 @@ void Menu::MenuSetItem(char* displayName , void (*callback)(void) , int index){
 
 void Menu::UpdateMenu(){
   display.clearDisplay();
+  display.setTextSize(2);
   int lineHeight = 8 * textSize;
   for (int i = 0; i < menuLength; i++) {
     if (i == selectedMenuIndex) {
@@ -73,7 +91,7 @@ void Menu::UpdateMenu(){
     } else {
       display.setTextColor(SSD1306_WHITE, SSD1306_BLACK);
     }
-    display.setCursor(0, i * lineHeight);
+    display.setCursor(5, i * lineHeight);
     display.println(mi[i].menuItem);
   }
   display.display();
