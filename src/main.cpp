@@ -39,13 +39,6 @@ WiFiManager wifiManager = WiFiManager();
 AccessPoint accessPoint = AccessPoint();
 WSMsgRecievedHandler wsMsgRecievedHandler = WSMsgRecievedHandler(GLOVE_NO);
 
-
-unsigned long wsDisconnectedTime = 0;
-unsigned long timeAfterSetup = 0;
-
-
-
-
 String command;
 Menu menu = Menu();
 Metronome metronome = Metronome();
@@ -73,16 +66,17 @@ Btn backbtn = Btn(27);
  void onUp();
  void onDown();
 
+unsigned long wsDisconnectedTime = 0;
+unsigned long timeAfterSetup = 0;
+
 void setup() {
 
   Serial.begin(115200);
-  
+
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-  ws.setup(GLOVE_NO);
 
   ShowHomeScreen();
   delay(2000);
-
   wifiManager.loadCredentials();
   if (GLOVE_NO == 0) {
     defaultAPSSID = "DRUM_GLOVE_LEFT";
@@ -107,15 +101,13 @@ void setup() {
     }
   }
 
-  wsMsgRecievedHandler.setBatteryL(&batteryL);
-
   ws.setWSMsgRecievedHandler(&wsMsgRecievedHandler);
   
-  wsDisconnectedTime = millis(); 
-  timeAfterSetup = millis();
 
 
   batteryL.BatteryInit(&display, &ws);
+  wsMsgRecievedHandler.setBatteryL(&batteryL);
+
 
   menu.MenuInit(&display);
   menu.MenuSetItem("Metronome",&metronome.Open);
@@ -131,23 +123,41 @@ void setup() {
 
   metronome.MetronomeInit(&display);
 
+  wsDisconnectedTime = millis(); 
+  timeAfterSetup = millis();
+
 }
 
 void loop(){
-  serialDebuger();
-  if (!accessPoint.isStarted()) {
-    ws.loop();
-  }
+    serialDebuger();
 
-  // if 4 seconds passed after setup
-  if ((millis() - timeAfterSetup > 4000) && !isConnectedToServer && !accessPoint.isStarted()) {
-    // if 4 seconds after last disconnection
-    if (millis() - wsDisconnectedTime > 4000) {
-      Serial.println("Failed to connect to server. Starting AP mode.");
-      accessPoint.start();
+    if (!accessPoint.isStarted()) {
+      ws.loop();
     }
-  }
-  // for wifi disconnection
+
+      // if 4 seconds passed after setup
+    if ((millis() - timeAfterSetup > 4000) && !isConnectedToServer && !accessPoint.isStarted()) {
+      // if 4 seconds after last disconnection
+      if (millis() - wsDisconnectedTime > 4000) {
+        Serial.println("Failed to connect to server. Starting AP mode.");
+        accessPoint.start();
+      }
+    }
+    metronome.UpdateMetronome();
+    // batteryL.setBattery1Level(batt.level());
+    batteryL.measureBatteryLevel();
+    // Serial.println("battery loop done");
+    piezo.loop();
+    // Serial.println("piezo loop done");
+    // ws.loop();
+    // Serial.println("Ws loop done");
+    upbtn.check();
+    downbtn.check();
+    selectbtn.check();
+    backbtn.check();
+
+
+    // for wifi disconnection
   if (!wifiManager.isConnectedToWifi() && !accessPoint.isStarted()) {
       unsigned long startTime = millis();
       while (!wifiManager.connectToWiFi() && millis() - startTime < 5000) {
@@ -170,21 +180,6 @@ void loop(){
     server.handleClient();
   }
 
-
-
-
-    metronome.UpdateMetronome();
-    // batteryL.setBattery1Level(batt.level());
-    batteryL.measureBatteryLevel();
-    // Serial.println("battery loop done");
-    piezo.loop();
-    // Serial.println("piezo loop done");
-    // ws.loop();
-    // Serial.println("Ws loop done");
-    upbtn.check();
-    downbtn.check();
-    selectbtn.check();
-    backbtn.check();
 }
 
 

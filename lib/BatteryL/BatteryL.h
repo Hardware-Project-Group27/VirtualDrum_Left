@@ -5,6 +5,7 @@
 #define ADC_RESOLUTION 12
 #define ACTIVATION_PIN 12
 #define CHECK_INTERVAL 2000
+#define STABALIZE_DELAY 5
 
 class BatteryL{
 
