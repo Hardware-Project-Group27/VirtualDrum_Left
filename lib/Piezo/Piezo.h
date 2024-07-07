@@ -3,6 +3,9 @@
 
 #define SENSOR_COUNT 4
 
+#define MAX_SENSITIVITY 4096
+#define CHECK_INTERVAL 100
+
 #define PIEZO1_PIN 34
 #define PIEZO2_PIN 35
 #define PIEZO3_PIN 36
@@ -26,8 +29,9 @@ class Piezo{
         void UpdateDisplay();
         static void Tougle();
         void PiezoInit(Adafruit_SSD1306 *d, WebSocketCon *ws);
-
-
+        bool getIsEnabled();
+        static void SensitivityUP();
+        static void SensitivityDown(); 
 };
 
 #endif

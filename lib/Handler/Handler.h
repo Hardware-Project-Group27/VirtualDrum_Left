@@ -7,6 +7,9 @@
 #define WINDOW_BATTERY 3
 #define WINDOW_PIEZO 4
 
+#define SHORT_PRESS_UPPER_TIME 800
+#define MEDIUM_PRESS_UPPER_TIME 3000
+
 class Handler{
 
     private:

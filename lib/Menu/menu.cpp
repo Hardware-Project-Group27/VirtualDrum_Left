@@ -13,7 +13,7 @@ unsigned long AlertShownAt = 0;
 const int menuLength = 4;
 
 typedef struct MenuItem{
-  char* menuItem;
+  String menuItem;
   void (*callback)(void);
 } MenuItem;
 
@@ -32,11 +32,6 @@ void Menu::MenuInit(Adafruit_SSD1306 *d) {
   display = *d;
 
   // Initialize display
-  if(!display.begin(SSD1306_SWITCHCAPVCC,SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
-  }
-
 
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
   display.clearDisplay();
@@ -77,7 +72,7 @@ unsigned long Menu::getAlertShownTime(){
 }
 
 
-void Menu::MenuSetItem(char* displayName , void (*callback)(void) , int index){
+void Menu::MenuSetItem(String displayName , void (*callback)(void) , int index){
   if(index==-1){
     index = mlen;
     mlen++;

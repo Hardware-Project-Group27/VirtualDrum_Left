@@ -7,12 +7,10 @@ long LastTriggeredTime[SENSOR_COUNT] = {0,0,0,0} ;
 int LastReadValue[SENSOR_COUNT] = {0,0,0,0} ;
 int triggerLevel = 0;
 bool isEnable = false;
+unsigned int sensitivity = 10;
 
+// #define THRESHOLD 10 // analog readings of below and equal to THRESHOLD will not be send to the server
 
-#define SENSOR_COUNT 4
-
-#define THRESHOLD 10 // analog readings of below and equal to THRESHOLD will not be send to the server
-#define CHECK_INTERVAL 40
 
 Piezo::Piezo(){
     pinMode(PIEZO1_PIN, INPUT);
@@ -24,6 +22,7 @@ Piezo::Piezo(){
 void Piezo::PiezoInit(Adafruit_SSD1306 *d, WebSocketCon *ws) {
     display = *d;
     wsCon = *ws;
+
 }
 
 void Piezo::loop() {
@@ -42,7 +41,7 @@ void Piezo::loop() {
         triggerLevel = reading;
         LastTriggeredTime[sensorId] = millis();
       }
-      if(triggerLevel>THRESHOLD){
+      if(triggerLevel>sensitivity){
         SendSerialTrigerSignal(sensorId,triggerLevel);
         LastReadValue[sensorId] = 0;
         LastTriggeredTime[sensorId] = millis();
@@ -59,14 +58,33 @@ void Piezo::UpdateDisplay(){
   display.setTextColor(WHITE);
   display.setCursor(22,10);
   display.println("Piezo");
-  display.setCursor(30,40);
+  display.setTextSize(1);
+  display.setCursor(20,35);
   if(isEnable){
-    display.println("Enabled");
+    display.println("State: Enabled");
   }
   else{
-    display.println("Disabled");
+    display.println("State: Disabled");
   }
+  display.setCursor(20,45);
+  display.println("Sensitivity: "+String(sensitivity));
   display.display();
+}
+
+bool Piezo::getIsEnabled(){
+  return isEnable;
+}
+
+void Piezo::SensitivityUP(){
+  if(sensitivity<MAX_SENSITIVITY){
+    sensitivity+=1;
+  }
+}
+
+void Piezo::SensitivityDown(){
+  if(sensitivity>0){
+    sensitivity-=1;
+  }
 }
 
 void Piezo::Tougle(){

@@ -68,6 +68,7 @@ Btn backbtn = Btn(27);
  void onDown();
  bool canAllowBtnAction();
 
+
 unsigned long wsDisconnectedTime = 0;
 unsigned long timeAfterSetup = 0;
 
@@ -75,7 +76,11 @@ void setup() {
 
   Serial.begin(115200);
 
-  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  if(!display.begin(SSD1306_SWITCHCAPVCC,SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+
   ws.setWSMsgRecievedHandler(&wsMsgRecievedHandler);
   batteryL.BatteryInit(&display, &ws);
   wsMsgRecievedHandler.setBatteryL(&batteryL);
@@ -119,7 +124,8 @@ void setup() {
   menu.MenuSetItem("Piezo",&nullFunction);
   menu.MenuSetItem("Reset",&esp_restart);
   handler.setFucnctions(&nullFunction,&nullFunction,&nullFunction,&nullFunction);
-
+  
+  
   piezo.PiezoInit(&display,&ws);
 
   upbtn.setup(onUp);
@@ -136,6 +142,7 @@ void setup() {
     alertTime = 1500;
   }
 }
+
 
 void loop(){
     serialDebuger();
@@ -356,7 +363,7 @@ void changeBtnFunctionContex(){
       break;
 
     case WINDOW_PIEZO:
-      handler.setFucnctions(&nullFunction,&nullFunction,&piezo.Tougle,&nullFunction);
+      handler.setFucnctions(&piezo.SensitivityUP,&piezo.SensitivityDown,&piezo.Tougle,&nullFunction);
       break;
 
     default:

@@ -82,10 +82,10 @@ void Btn::check() {
   // Check if the button is pressed and print the time since it was pressed
   if (buttonState) {
     // Serial.println(millis() - buttonPressTime);
-    if(millis() - buttonPressTime<800){
+    if(millis() - buttonPressTime<SHORT_PRESS_UPPER_TIME){
       shortPressAction();
     }
-    else if(millis() - buttonPressTime<6000){
+    else if(millis() - buttonPressTime<MEDIUM_PRESS_UPPER_TIME){
       mediumPressAction();
     }
     else{
