@@ -7,10 +7,7 @@ long LastTriggeredTime[SENSOR_COUNT] = {0,0,0,0} ;
 int LastReadValue[SENSOR_COUNT] = {0,0,0,0} ;
 int triggerLevel = 0;
 bool isEnable = false;
-unsigned int sensitivity = 10;
-
-// #define THRESHOLD 10 // analog readings of below and equal to THRESHOLD will not be send to the server
-
+unsigned int sensitivity = 3900;
 
 Piezo::Piezo(){
     pinMode(PIEZO1_PIN, INPUT);
@@ -32,7 +29,6 @@ void Piezo::loop() {
       if((millis() - LastTriggeredTime[sensorId] < CHECK_INTERVAL) || (reading >= LastReadValue[sensorId])){
         LastReadValue[sensorId]=reading;
         continue;
-        //triggerLevel = LastReadValue;
       }
       else if(reading < LastReadValue[sensorId]){
         triggerLevel = LastReadValue[sensorId];
@@ -41,7 +37,7 @@ void Piezo::loop() {
         triggerLevel = reading;
         LastTriggeredTime[sensorId] = millis();
       }
-      if(triggerLevel>sensitivity){
+      if(triggerLevel>MAX_SENSITIVITY-sensitivity){
         SendSerialTrigerSignal(sensorId,triggerLevel);
         LastReadValue[sensorId] = 0;
         LastTriggeredTime[sensorId] = millis();
@@ -92,7 +88,7 @@ void Piezo::Tougle(){
 }
 
 void Piezo::SendSerialTrigerSignal(int sensorId, int reading){
-  wsCon.sendMsg("play:drum" + String(sensorId+1) + ":" + String(reading));
+  wsCon.sendMsg("play:drum" + String(sensorId+5) + ":" + String(reading)); // starting from play:drum4
   Serial.print("play:drum");
   Serial.print(sensorId+1);
   Serial.print(":");

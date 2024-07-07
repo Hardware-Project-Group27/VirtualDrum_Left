@@ -90,17 +90,45 @@ void Metronome::UpdateMetronome()
 
 void Metronome::UpdateDisplay()
 {
-  display.clearDisplay();
-  display.setTextSize(3);
-  display.setTextColor(WHITE);
-  display.setCursor(35, 5);
-  display.println("BPM:");
-  display.setCursor(15, 40);
-  display.println(bpm);
-  display.setTextSize(2);
-  display.setCursor(73, 45);
-  display.println("/min");
-  display.display();
+  // display.clearDisplay();
+  // display.setTextSize(3);
+  // display.setTextColor(WHITE);
+  // display.setCursor(35, 5);
+  // display.println("BPM:");
+  // display.setCursor(15, 40);
+  // display.println(bpm);
+  // display.setTextSize(2);
+  // display.setCursor(73, 45);
+  // display.println("/min");
+  // display.display();
+
+    display.clearDisplay();
+    display.setTextSize(1);  // Small text size for status
+    display.setTextColor(WHITE);
+
+    // Display active or deactive status
+    display.setCursor(10, 1);
+    if(isRunning){
+      display.println("Status: active");
+    }
+    else{
+      display.println("Status: deactive");
+    }
+    // Display BPM
+    display.setTextSize(2);  // Medium text size for BPM label
+    display.setCursor(0, 25);
+    display.println("BPM:");
+    
+    display.setTextSize(3);  // Larger text size for BPM value
+    display.setCursor(48, 20);
+    display.println(bpm);
+
+    display.setTextSize(1);  // Small text size for units
+    display.setCursor(100, 40);
+    display.println("/min");
+
+    display.display();
+
 }
 
 void Metronome::MetronomeUp()

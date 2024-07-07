@@ -88,8 +88,11 @@ void Btn::check() {
     else if(millis() - buttonPressTime<MEDIUM_PRESS_UPPER_TIME){
       mediumPressAction();
     }
-    else{
+    else if(millis() - buttonPressTime<LONG_PRESS_UPPER_TIME){
       longPressAction();
+    }
+    else{
+      longlongPressAction();
     }
   }
 
@@ -106,7 +109,7 @@ void Btn::shortPressAction() {
 }
 
 void Btn::mediumPressAction() {
-  if(millis()-mFuncLastCall>1000){
+  if(millis()-mFuncLastCall>500){
     // Serial.println("Medium press action");
     trigerFunction();
     mFuncLastCall = millis();
@@ -114,9 +117,14 @@ void Btn::mediumPressAction() {
 }
 
 void Btn::longPressAction() {
-  if(millis()-LFuncLastCall>100){
+  if(millis()-LFuncLastCall>50){
     // Serial.println("Long press action");
     trigerFunction();
     LFuncLastCall = millis();
   }
+}
+
+void Btn::longlongPressAction() {
+  Serial.println("Long long press action------------------------");
+  trigerFunction();
 }

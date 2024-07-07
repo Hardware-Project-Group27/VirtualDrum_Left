@@ -9,6 +9,7 @@
 
 #define SHORT_PRESS_UPPER_TIME 800
 #define MEDIUM_PRESS_UPPER_TIME 3000
+#define LONG_PRESS_UPPER_TIME 6000
 
 class Handler{
 
@@ -39,6 +40,7 @@ class Btn{
         void shortPressAction();
         void mediumPressAction();
         void longPressAction();
+        void longlongPressAction();
         short pin;
         void (*trigerFunction)(void);
         bool buttonState = false;          // Current state of the button
