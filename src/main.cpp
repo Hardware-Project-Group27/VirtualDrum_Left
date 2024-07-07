@@ -37,9 +37,7 @@ Preferences preferences;
 WebSocketCon ws = WebSocketCon();
 WiFiManager wifiManager = WiFiManager();
 AccessPoint accessPoint = AccessPoint();
-
-unsigned long wsDisconnectedTime = 0;
-
+WSMsgRecievedHandler wsMsgRecievedHandler = WSMsgRecievedHandler(GLOVE_NO);
 
 
 String command;
@@ -69,18 +67,44 @@ Btn backbtn = Btn(27);
  void onUp();
  void onDown();
 
+unsigned long wsDisconnectedTime = 0;
+unsigned long timeAfterSetup = 0;
+
 void setup() {
 
   Serial.begin(115200);
-  
+
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-  ws.setup(GLOVE_NO);
 
   ShowHomeScreen();
   delay(2000);
+  wifiManager.loadCredentials();
+  if (GLOVE_NO == 0) {
+    defaultAPSSID = "DRUM_GLOVE_LEFT";
+  } else {
+    defaultAPSSID = "DRUM_GLOVE_RIGHT";
+  }
 
+  if (ssid == "" || password == "") {
+    accessPoint.start();
+  } else {
+    if (wifiManager.connectToWiFi()) {
+      Serial.println("\nConnected to WiFi");
+      Serial.println("IP Address: " + WiFi.localIP().toString());
+    
+      ws.setup(GLOVE_NO);  // the global flag will be set to true by this if connect
+      // we dont start the server connection here, the onevent needs to detect the connection
+      // so we check in the main loop
+      
+    } else {
+      Serial.println("\nFailed to connect to WiFi. Starting AP mode.");
+      accessPoint.start();
+    }
+  }
 
   batteryL.BatteryInit(&display, &ws);
+  wsMsgRecievedHandler.setBatteryL(&batteryL);
+
 
   menu.MenuInit(&display);
   menu.MenuSetItem("Metronome",&metronome.Open);
@@ -96,10 +120,26 @@ void setup() {
 
   metronome.MetronomeInit(&display);
 
+  wsDisconnectedTime = millis(); 
+  timeAfterSetup = millis();
+
 }
 
 void loop(){
     serialDebuger();
+
+    if (!accessPoint.isStarted()) {
+      ws.loop();
+    }
+
+      // if 4 seconds passed after setup
+    if ((millis() - timeAfterSetup > 4000) && !isConnectedToServer && !accessPoint.isStarted()) {
+      // if 4 seconds after last disconnection
+      if (millis() - wsDisconnectedTime > 4000) {
+        Serial.println("Failed to connect to server. Starting AP mode.");
+        accessPoint.start();
+      }
+    }
     metronome.UpdateMetronome();
     // batteryL.setBattery1Level(batt.level());
     batteryL.measureBatteryLevel();
@@ -112,6 +152,31 @@ void loop(){
     downbtn.check();
     selectbtn.check();
     backbtn.check();
+
+
+    // for wifi disconnection
+  if (!wifiManager.isConnectedToWifi() && !accessPoint.isStarted()) {
+      unsigned long startTime = millis();
+      while (!wifiManager.connectToWiFi() && millis() - startTime < 5000) {
+        delay(500);
+        Serial.print(".");
+      }
+
+      if (wifiManager.isConnectedToWifi()) {
+        Serial.println("\nConnected to WiFi");
+        Serial.println("IP Address: " + WiFi.localIP().toString());
+      } else {
+        Serial.println("\nFailed to connect to WiFi. Starting AP mode.");
+        accessPoint.start();
+      }
+  }
+
+  if (accessPoint.isStarted()) {
+    dnsServer.processNextRequest();
+    // Serial.println("AP mode");
+    server.handleClient();
+  }
+
 }
 
 
