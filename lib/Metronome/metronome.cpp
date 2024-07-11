@@ -9,12 +9,12 @@
 // int timer = 0;           // The higher the number, the slower the timing.
 // int bpm = 0;
 
-int ledState = LOW;               // Tracks the state of the LED
+int motorState = LOW;             // Tracks the state of the LED
 unsigned long previousMillis = 0; // Stores the last time LED was updated
-float interval = 0;               // Interval between LED toggles based on BPM
+unsigned long interval = 0;       // Interval between LED toggles based on BPM
 
 int bpm = 120; // Initial BPM
-int ledOnrate = 50;
+int motorOnTime = 70;
 
 bool lastIncButtonState = LOW;      // Variable to store the previous state of the increase button
 bool lastDecButtonState = LOW;      // Variable to store the previous state of the decrease button
@@ -28,7 +28,9 @@ Metronome::Metronome()
 void Metronome::MetronomeInit(Adafruit_SSD1306 *d)
 {
   display = *d;
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(PIN_MOTOR, OUTPUT);
+  analogWrite(PIN_MOTOR, 0);
+
   // Serial.begin(9600);
   // use a for loop to initialize each pin as an output:
   // display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
@@ -38,6 +40,7 @@ bool isRunning = false;
 void Metronome::Tougle()
 {
   isRunning = !isRunning;
+  analogWrite(PIN_MOTOR, 0);
 }
 
 void Metronome::Open()
@@ -48,43 +51,27 @@ void Metronome::UpdateMetronome()
 {
   if (isRunning)
   {
-    interval = 60000000 / bpm;
-    // Check if it's time to toggle the LED
-    unsigned long currentMillis = micros();
-    // if (currentMillis - previousMillis >= interval) {
-    //   // Save the last time the LED was toggled
-    //   previousMillis += interval;
-    //   // Toggle the LED state
-    //   ledState = !ledState;
-    //   // Update the LED
-    //   digitalWrite(LED_PIN, ledState);
+    interval = MILLIS_IN_A_MINUTE / bpm;
 
-    //   // Print the LED state
-    //   if(ledState){
-    //   Serial.println("led on");
-    //   }
-    //   else{
-    //     Serial.println("led off");
-    //   }
-    // }
+    unsigned long currentMillis = millis();
+    unsigned long elapsedTime = currentMillis - previousMillis;
 
-    if (ledState == HIGH && currentMillis - previousMillis >= ledOnrate)
+    if (motorState == HIGH && elapsedTime >= motorOnTime)
     {
-      // If the LED is on and the on duration has passed, turn it off
-      ledState = LOW;
-      previousMillis += (interval - ledOnrate); // Update the time when the state changed
-      digitalWrite(LED_PIN, ledState);          // Turn off the LED
-      Serial.println(bpm);
+      motorState = LOW;
+      previousMillis = currentMillis;
+      analogWrite(PIN_MOTOR, MIN_OUT);
     }
-    else if (ledState == LOW && currentMillis - previousMillis >= (interval - ledOnrate))
+    else if (motorState == LOW && elapsedTime >= (interval - motorOnTime))
     {
-      // If the LED is off and the off duration has passed, turn it on
-      ledState = HIGH;
-      previousMillis += ledOnrate;     // Update the time when the state changed
-      digitalWrite(LED_PIN, ledState); // Turn on the LED
+      motorState = HIGH;
+      previousMillis = currentMillis;
+      analogWrite(PIN_MOTOR, MAX_OUT);
     }
-
-    // Serial.println(bpm);
+  }
+  else
+  {
+    analogWrite(PIN_MOTOR, 0);
   }
 }
 
@@ -102,33 +89,34 @@ void Metronome::UpdateDisplay()
   // display.println("/min");
   // display.display();
 
-    display.clearDisplay();
-    display.setTextSize(1);  // Small text size for status
-    display.setTextColor(WHITE);
+  display.clearDisplay();
+  display.setTextSize(1); // Small text size for status
+  display.setTextColor(WHITE);
 
-    // Display active or deactive status
-    display.setCursor(10, 1);
-    if(isRunning){
-      display.println("Status: active");
-    }
-    else{
-      display.println("Status: deactive");
-    }
-    // Display BPM
-    display.setTextSize(2);  // Medium text size for BPM label
-    display.setCursor(0, 25);
-    display.println("BPM:");
-    
-    display.setTextSize(3);  // Larger text size for BPM value
-    display.setCursor(48, 20);
-    display.println(bpm);
+  // Display active or deactive status
+  display.setCursor(10, 1);
+  if (isRunning)
+  {
+    display.println("Status: active");
+  }
+  else
+  {
+    display.println("Status: deactive");
+  }
+  // Display BPM
+  display.setTextSize(2); // Medium text size for BPM label
+  display.setCursor(0, 25);
+  display.println("BPM:");
 
-    display.setTextSize(1);  // Small text size for units
-    display.setCursor(100, 40);
-    display.println("/min");
+  display.setTextSize(3); // Larger text size for BPM value
+  display.setCursor(48, 20);
+  display.println(bpm);
 
-    display.display();
+  display.setTextSize(1); // Small text size for units
+  display.setCursor(100, 40);
+  display.println("/min");
 
+  display.display();
 }
 
 void Metronome::MetronomeUp()
