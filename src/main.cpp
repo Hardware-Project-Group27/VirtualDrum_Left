@@ -14,6 +14,7 @@
 #include "Handler.h"
 #include "BatteryL.h"
 #include "Piezo.h"
+#include "OTAManager.h"
 
 #define GLOVE_NO 0
 
@@ -45,6 +46,7 @@ Handler handler = Handler();
 BatteryL batteryL = BatteryL(GLOVE_NO, ACTIVATION_PIN);
 Piezo piezo = Piezo();
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+OTAManager otaManager;
 
 Btn upbtn = Btn(4);
 Btn downbtn = Btn(13);
@@ -64,6 +66,7 @@ void onBack();
 void onUp();
 void onDown();
 bool canAllowBtnAction();
+void MenuAlertWrapperFunc(String, String);
 
 unsigned long wsDisconnectedTime = 0;
 unsigned long timeAfterSetup = 0;
@@ -88,7 +91,7 @@ void setup()
 
   ShowHomeScreen();
   menu.MenuInit(&display);
-  delay(2000);
+  // delay(2000);
   wifiManager.loadCredentials();
   if (GLOVE_NO == 0)
   {
@@ -121,6 +124,8 @@ void setup()
       Serial.println("\nFailed to connect to WiFi. Starting AP mode.");
       menu.Alert("Failed", "Connection failed!,\nConnect to " + String(defaultAPSSID) + " & Visit\nhttp://esp.local");
       accessPoint.start();
+      otaManager.begin(&server, MenuAlertWrapperFunc);
+
     }
   }
 
@@ -167,8 +172,11 @@ void loop()
       alertTime = 9000000;
       menu.Alert("Failed", "Server Not Found!,\nConnect to " + String(defaultAPSSID) + " & Visit\nhttp://esp.local");
       accessPoint.start();
+      otaManager.begin(&server, MenuAlertWrapperFunc);  // Initialize OTA
+
     }
   }
+
 
   metronome.UpdateMetronome();
   batteryL.measureBatteryLevel();
@@ -212,7 +220,14 @@ void loop()
     dnsServer.processNextRequest();
     // Serial.println("AP mode");
     server.handleClient();
+    otaManager.handle();  // Handle OTA updates
+
   }
+}
+
+
+void MenuAlertWrapperFunc(String title, String message) {
+    menu.Alert(title, message);
 }
 
 void nullFunction()
